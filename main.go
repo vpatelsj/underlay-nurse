@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/vpatelsj/underlay-nurse/cmd"
+import "underlay-nurse/cmd"
 
 func main() {
 	cmd.Execute()
