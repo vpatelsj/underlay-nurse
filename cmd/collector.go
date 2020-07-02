@@ -12,8 +12,6 @@ type DiagInfo struct {
 	DockerDaemon string
 	ChronyDaemon string
 	KubeletDameon string
-	AzSecPack string
-	HostInfo string
 	InternetReachable bool
 }
 
@@ -29,8 +27,6 @@ func CollectDiagnosticsCommand() *cobra.Command {
 				DockerDaemon:      checkDaemonStatus("docker"),
 				ChronyDaemon:      checkDaemonStatus("chrony"),
 				KubeletDameon:     checkDaemonStatus("kubelet"),
-				AzSecPack:         checkDaemonStatus("azsecpack"),
-				HostInfo:          checkDaemonStatus("hostinfo"),
 				InternetReachable: false,
 			}
 
