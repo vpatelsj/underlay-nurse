@@ -22,6 +22,9 @@ github.com/hashicorp/hcl/json/token
 ## explicit
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
+# github.com/joho/godotenv v1.3.0
+## explicit
+github.com/joho/godotenv
 # github.com/magefile/mage v1.9.0
 ## explicit
 github.com/magefile/mage/mg

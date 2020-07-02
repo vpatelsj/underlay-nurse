@@ -25,6 +25,16 @@ func Build() error {
 }
 
 func Deploy() error {
+
+	fmt.Println("Removing old Files for vmss0")
+	if err := runCmd("40.64.81.159:50000", "sudo rm -Rf /home/azureuser/storage.env && sudo rm -Rf /home/azureuser/underlay-nurse "); err != nil {
+		return err
+	}
+	fmt.Println("Removing Files for vmss3")
+	if err := runCmd("40.64.81.159:50003", "sudo rm -Rf /home/azureuser/storage.env && sudo rm -Rf /home/azureuser/underlay-nurse"); err != nil {
+		return err
+	}
+
 	fmt.Println("Uploading binary to vmss0")
 	if err := sh.Run("scp", "-P", "50000","/home/vmpi/go/bin/underlay-nurse","azureuser@40.64.81.159:/home/azureuser"); err != nil {
 		return err
@@ -33,8 +43,29 @@ func Deploy() error {
 	if err := sh.Run("scp", "-P", "50000","/home/vmpi/storage.env","azureuser@40.64.81.159:/home/azureuser"); err != nil {
 		return err
 	}
-	fmt.Println("sourcing env file to vmss0")
-	if err := runCmd("40.64.81.159:50000", "source /home/azureuser/storage.env && ./underlay-nurse collect-diag"); err != nil {
+	fmt.Println("Moving Files for vmss0")
+	if err := runCmd("40.64.81.159:50000", "sudo mv /home/azureuser/storage.env /tmp && sudo mv /home/azureuser/underlay-nurse /tmp"); err != nil {
+		return err
+	}
+	fmt.Println("Run collect-diag vmss0")
+	if err := runCmd("40.64.81.159:50000", "nohup /tmp/underlay-nurse collect-diag > foo.out 2> foo.err < /dev/null &"); err != nil {
+		return err
+	}
+
+	fmt.Println("Uploading binary to vmss3")
+	if err := sh.Run("scp", "-P", "50003","/home/vmpi/go/bin/underlay-nurse","azureuser@40.64.81.159:/home/azureuser"); err != nil {
+		return err
+	}
+	fmt.Println("Uploading to env file to vmss3")
+	if err := sh.Run("scp", "-P", "50003","/home/vmpi/storage.env","azureuser@40.64.81.159:/home/azureuser"); err != nil {
+		return err
+	}
+	fmt.Println("Moving Files for vmss3")
+	if err := runCmd("40.64.81.159:50003", "sudo mv /home/azureuser/storage.env /tmp && sudo mv /home/azureuser/underlay-nurse /tmp"); err != nil {
+		return err
+	}
+	fmt.Println("Run collect-diag vmss3")
+	if err := runCmd("40.64.81.159:50003", "nohup /tmp/underlay-nurse collect-diag > foo.out 2> foo.err < /dev/null &"); err != nil {
 		return err
 	}
 	return nil

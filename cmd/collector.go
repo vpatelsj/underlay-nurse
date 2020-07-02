@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"github.com/joho/godotenv"
 )
 type DiagInfo struct {
 	HostName string
@@ -51,6 +52,7 @@ func getHostName() string {
 
 func collectDiagnosticsInfo() (string, error) {
 	fmt.Println("Collecting node information")
+
 	di := DiagInfo{
 		HostName: getHostName(),
 		DockerDaemon:      checkDaemonStatus("docker"),
@@ -68,7 +70,7 @@ func collectDiagnosticsInfo() (string, error) {
 }
 
 func run(cmd *cobra.Command, args []string) error {
-
+	godotenv.Load("/tmp/storage.env")
 	ctx := context.Background()
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)
@@ -101,7 +103,7 @@ func run(cmd *cobra.Command, args []string) error {
 func pushToQueue() {
 	storageAccountName := os.Getenv("STORAGE_NAME")
 	storageAccountKey  := os.Getenv("STORAGE_KEY")
-	storageQueueName   := getHostName()
+	storageQueueName   := "test-underlay"
 
 	_url, err := url.Parse(fmt.Sprintf("https://%s.queue.core.windows.net/%s", storageAccountName, storageQueueName))
 	if err != nil {

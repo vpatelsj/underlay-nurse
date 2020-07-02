@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Azure/azure-storage-queue-go/azqueue"
+	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 	"log"
 	"net/url"
@@ -25,6 +26,7 @@ func ProcessDiangnosticsCommand() *cobra.Command {
 
 func runE(cmd *cobra.Command, args []string) error {
 	log.Print("Starting worker task to process messages from queue")
+	godotenv.Load("/tmp/storage.env")
 	ctx := context.Background()
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)
@@ -53,7 +55,7 @@ func runE(cmd *cobra.Command, args []string) error {
 func pullFromQueue() {
 	storageAccountName := os.Getenv("STORAGE_NAME")
 	storageAccountKey  := os.Getenv("STORAGE_KEY")
-	storageQueueName   := getHostName()
+	storageQueueName   := "test-underlay"
 
 	_url, err := url.Parse(fmt.Sprintf("https://%s.queue.core.windows.net/%s", storageAccountName, storageQueueName))
 	if err != nil {
