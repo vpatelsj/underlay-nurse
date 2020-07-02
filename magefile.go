@@ -4,8 +4,13 @@
 // defined in this magefile
 package main
 
-import "github.com/magefile/mage/sh"
-import "fmt"
+import (
+	"fmt"
+	"log"
+	"golang.org/x/crypto/ssh"
+	"github.com/magefile/mage/sh"
+    "io/ioutil"
+)
 // Does something pretty cool.
 func Build() error {
 	fmt.Println("Running Go Mod Download")
@@ -16,13 +21,80 @@ func Build() error {
 	if err := sh.Run("go", "install", "./..."); err != nil {
 		return err
 	}
-	fmt.Println("Uploading to vmss3")
-	if err := sh.Run("scp", "-P", "50003","/home/vmpi/go/bin/underlay-nurse","azureuser@40.64.81.159:/home/azureuser"); err != nil {
-		return err
-	}
-	fmt.Println("Uploading to vmss0")
+	return nil
+}
+
+func Deploy() error {
+	fmt.Println("Uploading binary to vmss0")
 	if err := sh.Run("scp", "-P", "50000","/home/vmpi/go/bin/underlay-nurse","azureuser@40.64.81.159:/home/azureuser"); err != nil {
 		return err
 	}
+	fmt.Println("Uploading to env file to vmss0")
+	if err := sh.Run("scp", "-P", "50000","/home/vmpi/storage.env","azureuser@40.64.81.159:/home/azureuser"); err != nil {
+		return err
+	}
+	fmt.Println("sourcing env file to vmss0")
+	if err := runCmd("40.64.81.159:50000", "source /home/azureuser/storage.env && ./underlay-nurse collect-diag"); err != nil {
+		return err
+	}
 	return nil
+}
+
+func runCmd(host, cmd string) error {
+
+	client, session, err := connectToHost("azureuser", host)
+	if err != nil {
+		return err
+	}
+	out, err := session.CombinedOutput(cmd)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(out))
+	client.Close()
+	return nil
+}
+
+func connectToHost(user, host string) (*ssh.Client, *ssh.Session, error) {
+
+
+	var hostKey ssh.PublicKey
+	// A public key may be used to authenticate against the remote
+	// server by using an unencrypted PEM-encoded private key file.
+	//
+	// If you have an encrypted private key, the crypto/x509 package
+	// can be used to decrypt it.
+	key, err := ioutil.ReadFile("/home/vmpi/.ssh/id_rsa")
+	if err != nil {
+		log.Fatalf("unable to read private key: %v", err)
+	}
+
+	// Create the Signer for this private key.
+	signer, err := ssh.ParsePrivateKey(key)
+	if err != nil {
+		log.Fatalf("unable to parse private key: %v", err)
+	}
+
+	sshConfig := &ssh.ClientConfig{
+		User: user,
+		Auth: []ssh.AuthMethod{
+			// Use the PublicKeys method for remote authentication.
+			ssh.PublicKeys(signer),
+		},
+		HostKeyCallback: ssh.FixedHostKey(hostKey),
+	}
+	sshConfig.HostKeyCallback = ssh.InsecureIgnoreHostKey()
+
+	client, err := ssh.Dial("tcp", host, sshConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	session, err := client.NewSession()
+	if err != nil {
+		client.Close()
+		return nil, nil, err
+	}
+
+	return client, session, nil
 }
